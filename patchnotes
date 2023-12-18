@@ -1,0 +1,8 @@
+28.09.2023 1.23
+die ganze App wurde in den Projekte-Ordner verschoben (daher wurde alle Teilprogramme neu installiert)
+vermutlich liegt es an der neuen Pycharmversion
+Tabellenbreiten korrigiert, update seitens Kivy oder Windows (sie passten halt alle nicht mehr)
+Umbruchfaktor oder Anzahl der Zeilen für eine neue Zeile geändert (steht bei 10)
+dln.spec wurde mitgenommen
+pyinstaller downgrade auf: 5.6.2
+python downgrade auf: 3.11.3

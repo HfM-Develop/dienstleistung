@@ -1,5 +1,4 @@
 import os
-
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfbase import pdfmetrics
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, PageTemplate, BaseDocTemplate, Image, \
@@ -30,7 +29,7 @@ class MyDocTemplate(BaseDocTemplate):
 
     def create_page_template(self):
         frame = Frame(
-            30, 30, 530, 650,
+            30, 120, 530, 560,
             id='normal'
         )
         template = PageTemplate(

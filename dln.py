@@ -1340,6 +1340,10 @@ class ServicesScreen(Screen):
             position_dict = {}
             for position in positiongroups:
                 position_items = self.sql_statements.get_positions_with_group_and_id(self.service_info, position)
+
+                # Sortieren der 'position_items' basierend auf dem Datum, das im dritten Element des Tuples steht
+                position_items.sort(key=lambda item: datetime.strptime(item[2], '%d.%m.%Y'))
+
                 position_dict[position] = position_items
             customer = pdf_data[0][4]
             try:

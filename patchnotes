@@ -6,3 +6,8 @@ Umbruchfaktor oder Anzahl der Zeilen für eine neue Zeile geändert (steht bei 1
 dln.spec wurde mitgenommen
 pyinstaller downgrade auf: 5.6.2
 python downgrade auf: 3.11.3
+
+19.12.2023
+Druckeinstellungen angepasst. Sortierung der Positionen eingefügt
+Requirements.txt erstellt und eine Verbindung zu GitHub
+

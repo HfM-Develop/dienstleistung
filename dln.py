@@ -217,7 +217,7 @@ class SQLStatements():
     def get_services_with_id(self, selected_service):
         cursor = self.connection_costumer.cursor()
         query = f""" SELECT `table_id`, `description`, DATE_FORMAT(`start_date`, '%d.%m.%Y'), DATE_FORMAT( 
-        `end_date`, '%d.%m.%Y'), `customer_name`, `consulter`, `type`, `last_user` FROM `dienstleistungen` WHERE 
+        `end_date`, '%d.%m.%Y'), `customer_name`, `consulter`, `type`, `last_user`, `abrechnungstyp`, `abrechnungszyklus` FROM `dienstleistungen` WHERE 
         `table_id` = {selected_service[0]} """
         # AND `company_code` = {self.company}
         # WHERE `deletion_flag` <> "True" AND status_type_a <> "abgerechnet" AND status_type_a <> "bezahlt"
@@ -442,29 +442,30 @@ class SQLStatements():
 
         return results
 
-    def input_service(self, service_type, description, consulter, customer, area):
+    def input_service(self, service_type, description, consulter, customer, area, abrechnungstyp, abrechnungszyklus):
         cursor = self.connection_costumer.cursor()
         windows_username = os.environ.get('USERNAME')
         timestamp = datetime.now()
         # Dienstleistungen werden initial immer mit dem Status "angelegt" angelegt
         # Es wird ein timestamp und der anlegende User hinterlegt
         query = "INSERT INTO `dienstleistungen` (timestamp_create, description, last_user, status_type_a, " \
-                "customer_name, customer_id, consulter, type, group_b, company_code) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                "customer_name, customer_id, consulter, type, group_b, company_code, abrechnungstyp, abrechnungszyklus ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
         values = (
             timestamp, description, windows_username, "angelegt", customer, "", consulter, service_type, area,
-            self.company)
+            self.company, abrechnungstyp, abrechnungszyklus
+        )
         cursor.execute(query, values)
         self.connection_costumer.commit()
         cursor.close()
 
-    def update_service(self, service_type, description, consulter, customer, list):
+    def update_service(self, service_type, description, consulter, customer, list, abrechnungstyp, abrechnungszyklus):
         cursor = self.connection_costumer.cursor()
         windows_username = os.environ.get('USERNAME')
         timestamp = datetime.now()
         # Hier können Sie den Code zum Ausführen von SQL-Abfragen oder zum Einfügen von Daten schreiben
         query = "UPDATE `dienstleistungen` SET timestamp_change = %s, description = %s, last_user = %s, customer_name = " \
-                "%s, consulter = %s, type = %s WHERE table_id = %s"
-        values = (timestamp, description, windows_username, customer, consulter, service_type, list[0])
+                "%s, consulter = %s, type = %s, abrechnungstyp = %s, abrechnungszyklus = %s WHERE table_id = %s"
+        values = (timestamp, description, windows_username, customer, consulter, service_type, abrechnungstyp, abrechnungszyklus , list[0])
         cursor.execute(query, values)
         self.connection_costumer.commit()
         cursor.close()
@@ -740,7 +741,7 @@ class ServicesScreen(Screen):
         self.create_position_dialog = False
         self.sql_statements = SQLStatements(mandant)
         self.informations = None
-        self.versionsnummer = "1.24"
+        self.versionsnummer = "1.25"
         self.mandant = self.sql_statements.mandant
         self.database = self.sql_statements.connection_costumer.database
 
@@ -987,7 +988,7 @@ class ServicesScreen(Screen):
             self.create_service_grid_layout.line_width = 1
 
             self.create_service_button_grid = MDGridLayout(cols=2, padding=10, size_hint=(0.2, 0.05),
-                                                           pos_hint={'x': 0.75, 'y': 0.55})
+                                                           pos_hint={'x': 0.75, 'y': 0.5})
             self.create_service_button_grid.line_width = 1
 
             # Fehlermeldungstext erstellen
@@ -999,15 +1000,22 @@ class ServicesScreen(Screen):
             self.description = MDTextField(hint_text='Bezeichnung', write_tab=False)
             self.consulter = MDTextField(hint_text='Ansprechpartner', write_tab=False)
             self.customer = MDTextField(hint_text='Rechnungsempfänger', write_tab=False)
+            self.abrechnugszyklus = MDTextField(hint_text='Abrechnungszyklus', write_tab=False)
+            self.abrechnungstyp = MDTextField(hint_text='Abrechnungstyp', write_tab=False)
             # self.responsible = MDTextField(hint_text='Umsatzzuteilung', write_tab=False)
             self.create_service_grid_layout.add_widget(self.service_type)
             self.create_service_grid_layout.add_widget(self.description)
             self.create_service_grid_layout.add_widget(self.consulter)
             self.create_service_grid_layout.add_widget(self.customer)
+            self.create_service_grid_layout.add_widget(self.abrechnugszyklus)
+            self.create_service_grid_layout.add_widget(self.abrechnungstyp)
+
             # self.create_service_grid_layout.add_widget(self.responsible)
             self.service_type.bind(focus=self.get_service_types)
             self.consulter.bind(focus=self.get_consulter)
             self.customer.bind(focus=self.get_customer)
+            self.abrechnugszyklus.bind(focus=self.get_abrechnungszyklusliste)
+            self.abrechnungstyp.bind(focus=self.get_abrechnungstypliste)
             # self.responsible.bind(focus=self.get_responsible)
 
             # Bestätigungs-Button erstellen
@@ -1035,7 +1043,7 @@ class ServicesScreen(Screen):
                     my_area = area[5]
                     break
             self.sql_statements.input_service(self.service_type.text, self.description.text, self.consulter.text,
-                                              self.customer.text, my_area)
+                                              self.customer.text, my_area, self.abrechnungstyp.text, self.abrechnugszyklus.text)
             data = self.sql_statements.get_services()
             self.service_table.row_data = data
             self.remove_widget(self.create_service_grid_layout)
@@ -1050,7 +1058,7 @@ class ServicesScreen(Screen):
     def update_service(self, *args):
         if self.service_type.text and self.description.text and self.consulter.text and self.customer.text:
             self.sql_statements.update_service(self.service_type.text, self.description.text, self.consulter.text,
-                                               self.customer.text, self.service_info)
+                                               self.customer.text, self.service_info, self.abrechnungstyp.text, self.abrechnugszyklus.text)
             data = self.sql_statements.get_services()
             self.service_table.row_data = data
             self.remove_widget(self.create_service_grid_layout)
@@ -1239,6 +1247,56 @@ class ServicesScreen(Screen):
         self.dropdown.dismiss()
         self.customer.text = instance
 
+    def get_abrechnungszyklusliste(self, instance, *args):
+        if self.abrechnugszyklus.focus:
+            result = [
+                "jährlich",
+                "halbjahrig",
+                "quartalsweise",
+                "monatlich",
+            ]
+            self.list = [
+                {"viewclass": "OneLineListItem",
+                 "text": f"{i}",
+                 "on_release": lambda x=f"{i}": self.fill_zyklusfeld(x)}
+                for i in result]
+            # DropDown wird technisch erzeugt
+            self.dropdown = MDDropdownMenu(
+                items=self.list,
+                width_mult=4,
+                position="auto"
+            )
+            self.dropdown.caller = instance
+            self.dropdown.open()
+
+    def fill_zyklusfeld(self, instance, *args):
+        self.dropdown.dismiss()
+        self.abrechnugszyklus.text = instance
+
+    def get_abrechnungstypliste(self, instance, *args):
+        if self.abrechnungstyp.focus:
+            result = [
+                "SEPA-Lastschrift",
+                "manuelle Überweisung",
+            ]
+            self.list = [
+                {"viewclass": "OneLineListItem",
+                 "text": f"{i}",
+                 "on_release": lambda x=f"{i}": self.fill_abrechnungstyp(x)}
+                for i in result]
+            # DropDown wird technisch erzeugt
+            self.dropdown = MDDropdownMenu(
+                items=self.list,
+                width_mult=4,
+                position="auto"
+            )
+            self.dropdown.caller = instance
+            self.dropdown.open()
+
+    def fill_abrechnungstyp(self, instance, *args):
+        self.dropdown.dismiss()
+        self.abrechnungstyp.text = instance
+
     def get_responsible(self, instance, *args):
         if self.responsible.focus:
             result, text = self.sql_statements.get_responsible(instance.text)
@@ -1278,7 +1336,7 @@ class ServicesScreen(Screen):
                     self.create_service_grid_layout.line_width = 1
 
                     self.create_service_button_grid = MDGridLayout(cols=2, padding=10, size_hint=(0.2, 0.05),
-                                                                   pos_hint={'x': 0.75, 'y': 0.55})
+                                                                   pos_hint={'x': 0.75, 'y': 0.5})
                     self.create_service_button_grid.line_width = 1
 
                     # Fehlermeldungstext erstellen
@@ -1290,15 +1348,21 @@ class ServicesScreen(Screen):
                     self.description = MDTextField(hint_text='Bezeichnung', write_tab=False)
                     self.consulter = MDTextField(hint_text='Ansprechpartner', write_tab=False)
                     self.customer = MDTextField(hint_text='Rechnungsempfänger', write_tab=False)
+                    self.abrechnugszyklus = MDTextField(hint_text='Abrechnungszyklus', write_tab=False)
+                    self.abrechnungstyp = MDTextField(hint_text='Abrechnungstyp', write_tab=False)
                     # self.responsible = MDTextField(hint_text='Umsatzzuteilung', write_tab=False)
                     self.create_service_grid_layout.add_widget(self.service_type)
                     self.create_service_grid_layout.add_widget(self.description)
                     self.create_service_grid_layout.add_widget(self.consulter)
                     self.create_service_grid_layout.add_widget(self.customer)
+                    self.create_service_grid_layout.add_widget(self.abrechnugszyklus)
+                    self.create_service_grid_layout.add_widget(self.abrechnungstyp)
                     # self.create_service_grid_layout.add_widget(self.responsible)
                     self.service_type.bind(focus=self.get_service_types)
                     self.consulter.bind(focus=self.get_consulter)
                     self.customer.bind(focus=self.get_customer)
+                    self.abrechnugszyklus.bind(focus=self.get_abrechnungszyklusliste)
+                    self.abrechnungstyp.bind(focus=self.get_abrechnungstypliste)
                     # self.responsible.bind(focus=self.get_responsible)
 
                     # Bestätigungs-Button erstellen
@@ -1318,6 +1382,9 @@ class ServicesScreen(Screen):
                     self.description.text = self.service_info[2]
                     self.consulter.text = self.service_info[5]
                     self.customer.text = self.service_info[6]
+                    servicedata = self.sql_statements.get_services_with_id(self.service_info)
+                    self.abrechnungstyp.text = servicedata[0][8]
+                    self.abrechnugszyklus.text = servicedata[0][9]
                     # self.responsible.text = self.service_info[9]
                 else:
                     self.informations.text = "Dienstleistung kann nicht mehr geändert werden"
@@ -2068,7 +2135,8 @@ class AdminScreen(Screen):
 
     def create_dunning_table(self, instance):
         if not self.dunning_table_created:
-            self.calculate_dunning_stages(instance)
+            #   self.calculate dunnings wird ausgelagert werden
+            #self.calculate_dunning_stages(instance)
             table_data = self.sqlstatements.get_services_for_dunning()
             # Beim ersten Aufruf werden die bezahlten rausgefiltert
             filtered_data = self.filter_entries(table_data)
@@ -2207,7 +2275,8 @@ class AdminScreen(Screen):
         status = "bezahlt"
         if self.dunning_row_selected:
             self.sqlstatements.change_status(status, self.dunning_info)
-            self.calculate_dunning_stages(instance)
+            # self.calculate wird nicht mehr automatisch gestartet,
+            #self.calculate_dunning_stages(instance)
             data = self.sqlstatements.get_services_for_dunning()
             self.dunning_table.row_data = data
             self.general_view_label.text = "DLN wurde auf bezahlt gesetzt"

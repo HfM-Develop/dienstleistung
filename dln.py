@@ -651,13 +651,13 @@ class SQLStatements():
         self.connection_costumer.commit()
         cursor.close()
 
-    def input_customer(self, name, id, adress, town, postalcode, phonenumber):
+    def input_customer(self, name, id, adress, town, postalcode, phonenumber, verantortlich, crm_nummer):
         cursor = self.connection_general.cursor()
         windows_username = os.environ.get('USERNAME')
         timestamp = datetime.now()
         query = "INSERT INTO `kunden` (customer_name, customer_id, customer_adress, customer_town, " \
-                "customer_postal, last_user, group_a) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-        values = (name, id, adress, town, postalcode, windows_username, phonenumber)
+                "customer_postal, last_user, group_a, group_b, group_c) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s )"
+        values = (name, id, adress, town, postalcode, windows_username, phonenumber, verantortlich, crm_nummer)
         cursor.execute(query, values)
         self.connection_general.commit()
         cursor.close()
@@ -741,7 +741,7 @@ class ServicesScreen(Screen):
         self.create_position_dialog = False
         self.sql_statements = SQLStatements(mandant)
         self.informations = None
-        self.versionsnummer = "1.25"
+        self.versionsnummer = "1.27"
         self.mandant = self.sql_statements.mandant
         self.database = self.sql_statements.connection_costumer.database
 
@@ -2125,7 +2125,10 @@ class AdminScreen(Screen):
                 postalcode = line[3]
                 domicilie = line[4]
                 phone = line[29]
-                self.sqlstatements.input_customer(customer, customer_id, adress, domicilie, postalcode, phone)
+                verantwortlich = line[49]
+                hfm_servernummer = line[60]
+                self.sqlstatements.input_customer(customer, customer_id, adress, domicilie, postalcode, phone,
+                                                  verantwortlich, hfm_servernummer)
 
         self.general_view_label.text = "Upload der CRM Daten fertig"
         Clock.schedule_once(self.clear_general_view_label, 5)

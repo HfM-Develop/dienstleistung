@@ -11,3 +11,7 @@ python downgrade auf: 3.11.3
 Druckeinstellungen angepasst. Sortierung der Positionen eingefügt
 Requirements.txt erstellt und eine Verbindung zu GitHub
 
+09.01.2024
+Weitere Felder ergänzt.
+Automatische Berechnung der Mahnstufen ausgeschaltet
+

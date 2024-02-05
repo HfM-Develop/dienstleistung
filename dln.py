@@ -741,7 +741,7 @@ class ServicesScreen(Screen):
         self.create_position_dialog = False
         self.sql_statements = SQLStatements(mandant)
         self.informations = None
-        self.versionsnummer = "1.27"
+        self.versionsnummer = "1.28"
         self.mandant = self.sql_statements.mandant
         self.database = self.sql_statements.connection_costumer.database
 

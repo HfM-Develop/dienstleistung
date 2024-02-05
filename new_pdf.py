@@ -199,11 +199,13 @@ class MyDocTemplate(BaseDocTemplate):
 
         for service, positions in self.pdflist.items():
             positions = list(positions)
+            positions = [tuple(item[:6]) for item in positions]  # Entfernen Sie die 6. Stelle in jedem Tupel
+            positions = list(positions)  # Konvertieren Sie die Tupel in eine Liste
             # service enthält die Daten für eine Tabelle
             # Erstellen einer leeren Tabelle für die aktuellen Dienstleistungsdaten
 
             # Hinzufügen der Kopfzeile zur Tabelle mit eigenem Style (header_style)
-            table_header = [service, "Bemerkung", "Datum", "Menge", "Einzelpreis [€]", "Gesamt [€]", "Berater"]
+            table_header = [service, "Bemerkung", "Datum", "Menge", "Einzelpreis [€]", "Gesamt [€]"]    # Berater entfernt
             table_header_paragraph = [Paragraph(cell, style=self.table_header) for cell in table_header]
             table_data.append(table_header_paragraph)
 
@@ -238,13 +240,12 @@ class MyDocTemplate(BaseDocTemplate):
                     pagebreake += 1
 
             if service != "Reisekosten":
-                footer_row = ["Zwischenumme", "", "", str(mengensumme_formatted), "Stunden", str(preissumme_formatted),
-                              ""]
+                footer_row = ["Zwischenumme", "", "", str(mengensumme_formatted), "Stunden", str(preissumme_formatted)]
                 footer_row_paragraph = [Paragraph(cell, style=self.table_footer) for cell in footer_row]
                 table_data.append(footer_row_paragraph)
                 counter += 1
             else:
-                footer_row = ["Zwischensumme", "", "", "", "", str(preissumme_formatted), ""]
+                footer_row = ["Zwischensumme", "", "", "", "", str(preissumme_formatted)]
                 footer_row_paragraph = [Paragraph(cell, style=self.table_footer) for cell in footer_row]
                 table_data.append(footer_row_paragraph)
                 counter += 1
@@ -252,7 +253,7 @@ class MyDocTemplate(BaseDocTemplate):
             mengensumme_alles = mengensumme_alles + mengensumme
             preissumme_alles = preissumme_alles + preissumme
 
-            self.table = Table(table_data, colWidths=[132, 100, 65, 50, 75, 65, 65])
+            self.table = Table(table_data, colWidths=[132, 140, 65, 50, 75, 65])
             self.table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
                 ('ALIGN', (0, 0), (0, -1), 'LEFT'),
@@ -273,11 +274,11 @@ class MyDocTemplate(BaseDocTemplate):
         preissumme_alles_form = "{:.2f}".format(preissumme_alles)
 
         table_data.append([""])
-        last_row = ["Gesamt", "", "", str(mengensumme_alles_form), "Stunden", str(preissumme_alles_form), ""]
+        last_row = ["Gesamt", "", "", str(mengensumme_alles_form), "Stunden", str(preissumme_alles_form)]
         last_row_paragraph = [Paragraph(cell, style=self.table_last) for cell in last_row]
         table_data.append(last_row_paragraph)
 
-        self.table = Table(table_data, colWidths=[132, 100, 65, 50, 75, 65, 65])
+        self.table = Table(table_data, colWidths=[132, 140, 65, 50, 75, 65])
         elements.append(self.table)
 
         # Setzen Sie den Pfad zum gewünschten Verzeichnis
